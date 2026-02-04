@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  endee:
+    image: endeeio/endee-server:latest
+    container_name: endee-server
+    ports:
+      - "8081:8080"
+    environment:
+      NDD_NUM_THREADS: 0
+      NDD_AUTH_TOKEN: ""  # Set a token for production
+    volumes:
+      - endee-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: endee-rag-api
+    ports:
+      - "8000:8000"
+    environment:
+      ENDEE_BASE_URL: http://endee:8080
+      ENDEE_AUTH_TOKEN: ""
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LOG_LEVEL: INFO
+    depends_on:
+      endee:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+volumes:
+  endee-data:
+    driver: local
