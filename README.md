@@ -609,9 +609,6 @@ Contributions are welcome! Please:
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -620,11 +617,98 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **OpenAI** for language models
 - **FastAPI** community
 
-## 📧 Contact & Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/your-username/endee-rag-system/issues)
-- Discussions: [Ask questions and share ideas](https://github.com/your-username/endee-rag-system/discussions)
+## ✅ How to Verify the Use Case (Quick Checks)
 
----
+Follow these steps to confirm the Endee RAG system is working end-to-end.
 
-**Built with ❤️ using Endee - The High-Performance Vector Database**
+1. **Start Endee**
+
+   - Using Docker:
+
+     ```powershell
+     docker run -p 8080:8080 -v endee-data:/data endeeio/endee-server:latest
+     ```
+
+   - Confirm health:
+
+     ```powershell
+     curl http://localhost:8080/api/v1/health
+     ```
+
+     Expected: JSON with `status` = `healthy`.
+
+2. **Prepare Python environment & install deps**
+
+   ```powershell
+   python -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Configure environment**
+
+   - Copy the template and adjust if necessary:
+
+     ```powershell
+     copy .env.example .env
+     ```
+
+   - Ensure `ENDEE_BASE_URL` points to `http://localhost:8080` and set `OPENAI_API_KEY` only if using LLM features.
+
+4. **Ingest sample documents**
+
+   ```powershell
+   python -m scripts.ingest_samples
+   ```
+
+   - Verify ingestion by calling the statistics or indices endpoints:
+
+     ```powershell
+     curl http://localhost:8000/api/v1/indices
+     curl http://localhost:8000/api/v1/statistics
+     ```
+
+5. **Start the API server**
+
+   ```powershell
+   python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+   - Confirm API health:
+
+     ```powershell
+     curl http://localhost:8000/health
+     ```
+
+6. **Run example search**
+
+   - CLI script:
+
+     ```powershell
+     python -m scripts.example_search
+     ```
+
+   - Or use curl to test semantic search (no LLM):
+
+     ```powershell
+     curl -X POST "http://localhost:8000/api/v1/search" -H "Content-Type: application/json" -d '{"query":"What is Python?","top_k":3,"use_llm":false}'
+     ```
+
+   - For an LLM-generated answer (if `OPENAI_API_KEY` set):
+
+     ```powershell
+     curl -X POST "http://localhost:8000/api/v1/search" -H "Content-Type: application/json" -d '{"query":"How do vector databases work?","top_k":5,"use_llm":true}'
+     ```
+
+7. **Verify results**
+
+   - Check that search responses return `results` with `metadata.content` and reasonable `score` values.
+   - If `use_llm=true`, confirm `generated_answer` is present and coherent.
+
+8. **Troubleshooting quick tips**
+
+   - If Endee not reachable: re-check `ENDEE_BASE_URL` and Docker port mapping.
+   - If embeddings fail: ensure `EMBEDDING_MODEL` is accessible and internet/GPU requirements met.
+   - Check logs printed by the API server for errors.
+
